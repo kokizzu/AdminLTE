@@ -51,6 +51,7 @@ const Default = {
   autoIframeMode: true,
   autoItemActive: true,
   autoShowNewTab: true,
+  autoDarkMode: false,
   allowDuplicates: false,
   loadingScreen: true,
   useNavbarItems: true,
@@ -69,7 +70,6 @@ class IFrame {
   constructor(element, config) {
     this._config = config
     this._element = element
-
     this._init()
   }
 
@@ -239,7 +239,12 @@ class IFrame {
 
   _initFrameElement() {
     if (window.frameElement && this._config.autoIframeMode) {
-      $('body').addClass(CLASS_NAME_IFRAME_MODE)
+      const $body = $('body')
+      $body.addClass(CLASS_NAME_IFRAME_MODE)
+
+      if (this._config.autoDarkMode) {
+        $body.addClass('dark-mode')
+      }
     }
   }
 
@@ -254,16 +259,17 @@ class IFrame {
         this._fixHeight()
       }, 1)
     })
-    $(document).on('click', `${SELECTOR_SIDEBAR_MENU_ITEM}, ${SELECTOR_SIDEBAR_SEARCH_ITEM}`, e => {
-      e.preventDefault()
-      this.openTabSidebar(e.target)
-    })
-
-    if (this._config.useNavbarItems) {
-      $(document).on('click', `${SELECTOR_HEADER_MENU_ITEM}, ${SELECTOR_HEADER_DROPDOWN_ITEM}`, e => {
+    if ($('body').hasClass(CLASS_NAME_IFRAME_MODE)) {
+      $(document).on('click', `${SELECTOR_SIDEBAR_MENU_ITEM}, ${SELECTOR_SIDEBAR_SEARCH_ITEM}`, e => {
         e.preventDefault()
         this.openTabSidebar(e.target)
       })
+      if (this._config.useNavbarItems) {
+        $(document).on('click', `${SELECTOR_HEADER_MENU_ITEM}, ${SELECTOR_HEADER_DROPDOWN_ITEM}`, e => {
+          e.preventDefault()
+          this.openTabSidebar(e.target)
+        })
+      }
     }
 
     $(document).on('click', SELECTOR_TAB_NAVBAR_NAV_LINK, e => {
@@ -385,6 +391,8 @@ class IFrame {
       }
 
       const _options = $.extend({}, Default, typeof config === 'object' ? config : data)
+      localStorage.setItem('AdminLTE:IFrame:Options', JSON.stringify(_options))
+
       const plugin = new IFrame($(this), _options)
 
       $(this).data(DATA_KEY, typeof config === 'object' ? config : data)
@@ -393,7 +401,7 @@ class IFrame {
         plugin[config]()
       }
     } else {
-      new IFrame($(this), Default)._initFrameElement()
+      new IFrame($(this), JSON.parse(localStorage.getItem('AdminLTE:IFrame:Options')))._initFrameElement()
     }
   }
 }
